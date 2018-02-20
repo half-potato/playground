@@ -22,6 +22,10 @@ class Kuramoto:
         self.phase = np.mod(self.phase + dtheta * dt, 2*np.pi)
         self.hist = np.vstack((self.hist, self.phase))
 
+    def order(self):
+        o = np.mean(np.exp(self.phase * np.complex(0,1)))
+        return abs(0), np.angle(o)
+
     def view(self):
         cv2.imshow("Display", cv2.normalize(self.phase, 0, 1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F))
 
@@ -40,6 +44,7 @@ if __name__ == "__main__":
     while True:
         k.update(dt)
         k.view()
+        print(k.order())
         #k.view_fft()
         if chr(cv2.waitKey(1) & 0xFF) == "q":
             break
