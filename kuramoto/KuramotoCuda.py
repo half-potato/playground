@@ -14,11 +14,6 @@ class Kuramoto:
         self.phase = 2*np.pi*cp.random.rand(1, size)
         self.size = size
         self.coupling = coupling
-        cv2.namedWindow("Display", cv2.WINDOW_NORMAL)
-        self.hist = self.internal_freq
-        self.rs = []
-        self.phis = []
-        self.ims = []
 
     def update(self, dt):
         phase_rep = cp.repeat(self.phase, self.size, axis=0)
@@ -34,45 +29,8 @@ class Kuramoto:
         o = cp.mean(cp.exp(self.phase * np.complex(0,1)))
         return abs(o), cp.angle(o)
 
-    def view(self, shape):
-        im = cp.asnumpy(cp.reshape(self.phase, shape))
-        norm_im = cv2.normalize(im, 0, 255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-        col_im = cv2.applyColorMap(np.uint8(norm_im), cv2.COLORMAP_PARULA)
-        cv2.imshow("Display", col_im)
-
-    def store(self, shape):
-        im = cp.asnumpy(cp.reshape(self.phase, shape))
-        norm_im = cv2.normalize(im, 0, 255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-        col_im = cv2.applyColorMap(np.uint8(norm_im), cv2.COLORMAP_PARULA)
-        self.ims.append(col_im)
-
-    def save(self, path):
-        shape = self.ims[0].shape
-        shape = (shape[0], shape[1])
-        out = cv2.VideoWriter(path, cv2.VideoWriter_fourcc('H','F','Y','U'), 15, shape, 1)
-        for i in self.ims:
-            out.write(i)
-        out.release()
-
-    def play(self):
-        for i in self.ims:
-            cv2.imshow("Display", i)
-            if chr(cv2.waitKey(2) & 0xFF) == "q":
-                break
-
-    def view_hist(self):
-        plt.subplot(3,1,1)
-        plt.plot(range(self.hist.shape[0]), cp.sum(cp.asnumpy(self.hist), axis=1))
-        plt.subplot(3,1,2)
-        plt.plot(range(len(self.rs)), self.rs)
-        plt.subplot(3,1,3)
-        plt.plot(range(len(self.phis)), self.phis)
-        plt.show()
-        cv2.imshow("Display", norm(cp.asnumpy(self.hist)))
-
-    def view_fft(self):
-        fft = cp.fft.fft(self.phase).real
-        cv2.imshow("Display", norm(cp.asnumpy(fft)))
+    def getPhaseIm(self, shape):
+        return cp.asnumpy(cp.reshape(self.phase, shape))
 
 def norm(img):
     return cv2.normalize(img, 0, 1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)

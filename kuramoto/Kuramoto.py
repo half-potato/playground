@@ -32,22 +32,8 @@ class Kuramoto:
         o = np.mean(np.exp(self.phase * np.complex(0,1)))
         return abs(o), np.angle(o)
 
-    def view(self, shape):
-        cv2.imshow("Display", norm(np.reshape(self.phase, shape)))
-
-    def view_hist(self):
-        plt.subplot(3,1,1)
-        plt.plot(range(self.hist.shape[0]), np.sum(self.hist, axis=1))
-        plt.subplot(3,1,2)
-        plt.plot(range(len(self.rs)), self.rs)
-        plt.subplot(3,1,3)
-        plt.plot(range(len(self.phis)), self.phis)
-        plt.show()
-        cv2.imshow("Display", norm(self.hist))
-
-    def view_fft(self):
-        fft = np.fft.fft(self.phase).real
-        cv2.imshow("Display", norm(fft))
+    def getPhaseIm(self, shape):
+        return np.reshape(self.phase, shape)
 
 def norm(img):
     return cv2.normalize(img, 0, 1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
