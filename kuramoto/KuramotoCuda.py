@@ -20,10 +20,6 @@ class Kuramoto:
         phase_diff = cp.sum(self.coupling*cp.sin(phase_rep.T - phase_rep), axis=0)
         dtheta = (self.internal_freq + phase_diff/self.size)
         self.phase = cp.mod(self.phase + dtheta * dt, 2*np.pi)
-        self.hist = cp.vstack((self.hist, self.phase))
-        r, phi = self.order()
-        self.rs.append(r)
-        self.phis.append(phi)
 
     def order(self):
         o = cp.mean(cp.exp(self.phase * np.complex(0,1)))
@@ -75,7 +71,7 @@ def local_coupling(shape, kernel):
     for i in range(shape[0]):
         for j in range(shape[1]):
             k = i*shape[0]+j
-            coupling[k] = shift(k_pad, i-kernel.shape[1]//2, j-kernel.shape[0]//2)
+            coupling[k] = shift(k_pad, i-kernel.shape[1]//2, j-kernel.shape[0]//2).flatten()
     return coupling
 
 # Tried params:

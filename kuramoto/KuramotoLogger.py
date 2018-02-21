@@ -1,4 +1,4 @@
-CUDA = False
+CUDA = True
 import numpy as np
 if CUDA:
     import cupy as cp
@@ -54,13 +54,13 @@ class KuramotoLogger:
 
     def save_upscale(self, path, pixelwise, uppyr):
         shape = self.ims[0].shape
-        final_shape = (shape[0]*pixelwise*2**upyr, shape[1]*pixelwise*2**upyr)
-        out = cv2.VideoWriter(path, cv2.VideoWriter_fourcc('H','F','Y','U'), 15, final_shape, 1)
+        final_shape = (shape[0]*pixelwise*2**uppyr, shape[1]*pixelwise*2**uppyr)
+        out = cv2.VideoWriter(path, cv2.VideoWriter_fourcc(*'XVID'), 15, final_shape, 1)
         for i in self.ims:
-            f_n = cv2.resize(frame, (shape[0]*pixelwise, shape[1]*pixelwise), interpolation=cv2.INTER_NEAREST)
+            f_n = cv2.resize(i, (shape[0]*pixelwise, shape[1]*pixelwise), interpolation=cv2.INTER_NEAREST)
             for j in range(uppyr):
-                i = cv2.pyrUp(i)
-            out.write(i)
+                f_n = cv2.pyrUp(f_n)
+            out.write(f_n)
         out.release()
 
     def play(self):
@@ -70,14 +70,21 @@ class KuramotoLogger:
                 break
 
     def view_hist(self):
-        plt.subplot(3,1,1)
-        plt.plot(range(self.hist.shape[0]), np.sum(self.hist, axis=1))
-        plt.subplot(3,1,2)
-        plt.plot(range(len(self.rs)), self.rs)
-        plt.subplot(3,1,3)
-        plt.plot(range(len(self.phis)), self.phis)
-        plt.show()
-        cv2.imshow("Display", norm(self.hist))
+        if self.keep_hist:
+            plt.subplot(3,1,1)
+            plt.plot(range(self.hist.shape[0]), np.sum(self.hist, axis=1))
+            plt.subplot(3,1,2)
+            plt.plot(range(len(self.rs)), self.rs)
+            plt.subplot(3,1,3)
+            plt.plot(range(len(self.phis)), self.phis)
+            plt.show()
+            cv2.imshow("Display", norm(self.hist))
+        else:
+            plt.subplot(2,1,1)
+            plt.plot(range(len(self.rs)), self.rs)
+            plt.subplot(2,1,2)
+            plt.plot(range(len(self.phis)), self.phis)
+            plt.show()
 
 def norm(img):
     return cv2.normalize(img, 0, 1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
@@ -87,11 +94,10 @@ def norm(img):
 # size:60 coupling: 300 hz: 1 hzstd: 0.50 swirls
 # size:120 coupling: 1500 hz: 1 hzstd: 0.50 swirls
 if __name__ == "__main__":
-    size = 50
+    size = 120
     #coupling = np.ones((size**2, size**2))
     if CUDA:
-        coupling = cp.array(norm(cp.asnumpy(kc.local_coupling(
-            (size, size), kc.gkern(5, 2)))))
+        coupling = cp.array(norm(cp.asnumpy(kc.local_coupling((size, size), kc.gkern(5, 2)))))
     else:
         coupling = kc.local_coupling((size, size), kc.gkern(5, 2))
     k = KuramotoLogger(size**2, 1, 0.50, 1500*coupling)
@@ -106,6 +112,7 @@ if __name__ == "__main__":
             break
     k.play()
     #k.save("kuramoto_%i.hfyu" % size)
-    k.save_upscale("kuramoto_%i.hfyu" % size, 4, 2)
+    k.save_upscale("kuramoto_%i_upscale.avi" % size, 4, 2)
+    print("Saved")
     k.view_hist()
     cv2.waitKey(0)
