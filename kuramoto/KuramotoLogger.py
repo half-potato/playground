@@ -52,6 +52,17 @@ class KuramotoLogger:
             out.write(i)
         out.release()
 
+    def save_upscale(self, path, pixelwise, uppyr):
+        shape = self.ims[0].shape
+        final_shape = (shape[0]*pixelwise*2**upyr, shape[1]*pixelwise*2**upyr)
+        out = cv2.VideoWriter(path, cv2.VideoWriter_fourcc('H','F','Y','U'), 15, final_shape, 1)
+        for i in self.ims:
+            f_n = cv2.resize(frame, (shape[0]*pixelwise, shape[1]*pixelwise), interpolation=cv2.INTER_NEAREST)
+            for j in range(uppyr):
+                i = cv2.pyrUp(i)
+            out.write(i)
+        out.release()
+
     def play(self):
         for i in self.ims:
             cv2.imshow("Display", i)
@@ -94,6 +105,7 @@ if __name__ == "__main__":
         if chr(cv2.waitKey(1) & 0xFF) == "q":
             break
     k.play()
-    k.save("kuramoto_%i.hfyu" % size)
+    #k.save("kuramoto_%i.hfyu" % size)
+    k.save_upscale("kuramoto_%i.hfyu" % size, 4, 2)
     k.view_hist()
     cv2.waitKey(0)

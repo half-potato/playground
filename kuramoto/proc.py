@@ -20,7 +20,7 @@ while True:
         shape = (frame.shape[0]*nearest_scale*2**upscale, frame.shape[1]*nearest_scale*2**upscale)
         out = cv2.VideoWriter(path, cv2.VideoWriter_fourcc('X','2','6','4'), 15, shape, 1)
 
-    f_n = cv2.resize(frame, (frame.shape[0]*4,frame.shape[1]*4), interpolation=cv2.INTER_NEAREST)
+    f_n = cv2.resize(frame, (frame.shape[0]*nearest_scale,frame.shape[1]*nearest_scale), interpolation=cv2.INTER_NEAREST)
     for i in range(upscale):
         f_n = cv2.pyrUp(f_n)
     out.write(f_n)
