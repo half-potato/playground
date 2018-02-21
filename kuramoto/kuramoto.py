@@ -3,19 +3,6 @@ import cv2, time
 import matplotlib.pyplot as plt
 import scipy.stats as st
 
-def norm(img):
-    return cv2.normalize(img, 0, 1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-
-def gkern(kernlen=21, nsig=3):
-    """Returns a 2D Gaussian kernel array."""
-
-    interval = (2*nsig+1.)/(kernlen)
-    x = np.linspace(-nsig-interval/2., nsig+interval/2., kernlen+1)
-    kern1d = np.diff(st.norm.cdf(x))
-    kernel_raw = np.sqrt(np.outer(kern1d, kern1d))
-    kernel = kernel_raw/kernel_raw.sum()
-    return kernel
-
 class Kuramoto:
     def __init__(self, size, mean, std, coupling):
         """
@@ -62,17 +49,18 @@ class Kuramoto:
         fft = np.fft.fft(self.phase).real
         cv2.imshow("Display", norm(fft))
 
-"""
-def shift(a, num, axis):
-    if num == 0:
-        return a
-    b = np.roll(a, num, axis=axis)
-    s = np.arange(-num) if (num < 0) else a.shape[axis]-np.arange(num)-1
-    ax = (axis+1) % len(a.shape)
-    ones = np.zeros_like(np.take(b, s, axis=ax))
-    b = np.delete(b, s, axis=ax)
-    return np.concatenate((b, ones), axis=ax)
-"""
+def norm(img):
+    return cv2.normalize(img, 0, 1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+
+def gkern(kernlen=21, nsig=3):
+    """Returns a 2D Gaussian kernel array."""
+
+    interval = (2*nsig+1.)/(kernlen)
+    x = np.linspace(-nsig-interval/2., nsig+interval/2., kernlen+1)
+    kern1d = np.diff(st.norm.cdf(x))
+    kernel_raw = np.sqrt(np.outer(kern1d, kern1d))
+    kernel = kernel_raw/kernel_raw.sum()
+    return kernel
 
 def shift(a, x, y):
     b = np.roll(a, x, axis=1)
@@ -101,17 +89,15 @@ def ring_coupling(shape, weights):
 def local_coupling(shape, kernel):
     axis_pad = ((0,shape[0]-kernel.shape[0]),(0, shape[1]-kernel.shape[1]))
     k_pad = np.pad(kernel, axis_pad, "constant", constant_values=(0))
-    coupling = []
+    coupling = np.zeros((shape[0]**2, shape[1]**2))
     for i in range(shape[0]):
         for j in range(shape[1]):
             k = i*shape[0]+j
-            print(i, j)
-            k_shifted = shift(k_pad, i-kernel.shape[1]//2, j-kernel.shape[0]//2)
-            coupling.append(k_shifted.flatten())
-    return np.array(coupling)
+            coupling[k] = shift(k_pad, i-kernel.shape[1]//2, j-kernel.shape[0]//2).flatten()
+    return coupling
 
 if __name__ == "__main__":
-    size = 40
+    size = 80
     #coupling = np.ones((size**2, size**2))
     #coupling = np.random.normal(1, .5, (size**2, size**2))
     #coupling = ring_coupling((size**2, size**2), [1, 1, 1, 0.75, .5, 0.25])

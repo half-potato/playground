@@ -4,19 +4,6 @@ import cv2, time
 import matplotlib.pyplot as plt
 import scipy.stats as st
 
-def norm(img):
-    return cv2.normalize(img, 0, 1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-
-def gkern(kernlen=21, nsig=3):
-    """Returns a 2D Gaussian kernel array."""
-
-    interval = (2*nsig+1.)/(kernlen)
-    x = np.linspace(-nsig-interval/2., nsig+interval/2., kernlen+1)
-    kern1d = cp.array(np.diff(st.norm.cdf(x)))
-    kernel_raw = cp.sqrt(cp.outer(kern1d, kern1d))
-    kernel = kernel_raw/kernel_raw.sum()
-    return kernel
-
 class Kuramoto:
     def __init__(self, size, mean, std, coupling):
         """
@@ -58,7 +45,7 @@ class Kuramoto:
         norm_im = cv2.normalize(im, 0, 255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
         col_im = cv2.applyColorMap(np.uint8(norm_im), cv2.COLORMAP_PARULA)
         self.ims.append(col_im)
-        
+
     def save(self, path):
         shape = self.ims[0].shape
         shape = (shape[0], shape[1])
@@ -87,17 +74,17 @@ class Kuramoto:
         fft = cp.fft.fft(self.phase).real
         cv2.imshow("Display", norm(cp.asnumpy(fft)))
 
-"""
-def shift(a, num, axis):
-    if num == 0:
-        return a
-    b = np.roll(a, num, axis=axis)
-    s = np.arange(-num) if (num < 0) else a.shape[axis]-np.arange(num)-1
-    ax = (axis+1) % len(a.shape)
-    ones = np.zeros_like(np.take(b, s, axis=ax))
-    b = np.delete(b, s, axis=ax)
-    return np.concatenate((b, ones), axis=ax)
-"""
+def norm(img):
+    return cv2.normalize(img, 0, 1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+
+def gkern(kernlen=21, nsig=3):
+    """Returns a 2D Gaussian kernel array."""
+    interval = (2*nsig+1.)/(kernlen)
+    x = np.linspace(-nsig-interval/2., nsig+interval/2., kernlen+1)
+    kern1d = cp.array(np.diff(st.norm.cdf(x)))
+    kernel_raw = cp.sqrt(cp.outer(kern1d, kern1d))
+    kernel = kernel_raw/kernel_raw.sum()
+    return kernel
 
 def shift(a, x, y):
     b = cp.roll(a, x, axis=1)
@@ -123,39 +110,14 @@ def ring_coupling(shape, weights):
         c += weights[i]*shift(e, 0, i+1)
     return c
 
-"""
 def local_coupling(shape, kernel):
     axis_pad = ((0,shape[0]-kernel.shape[0]),(0, shape[1]-kernel.shape[1]))
     k_pad = cp.pad(kernel, axis_pad, "constant", constant_values=(0))
-    coupling = None
+    coupling = cp.zeros((shape[0]**2, shape[1]**2))
     for i in range(shape[0]):
         for j in range(shape[1]):
             k = i*shape[0]+j
-            k_shifted = shift(k_pad, i-kernel.shape[1]//2, j-kernel.shape[0]//2)
-            if type(coupling) == type(None):
-                coupling = k_shifted.flatten()
-            else:
-                coupling = cp.vstack((coupling, k_shifted.flatten()))
-            #coupling.append(k_shifted.flatten())
-    #return cp.array(coupling)
-    return coupling
-"""
-
-def local_coupling(shape, kernel):
-    axis_pad = ((0,shape[0]-kernel.shape[0]),(0, shape[1]-kernel.shape[1]))
-    k_pad = cp.pad(kernel, axis_pad, "constant", constant_values=(0))
-    coupling = None
-    print("Creating couplings")
-    for i in range(shape[0]):
-        for j in range(shape[1]):
-            k_shifted = shift(k_pad, i-kernel.shape[1]//2, j-kernel.shape[0]//2)
-            if type(coupling) == type(None):
-                coupling = k_shifted.flatten()
-            else:
-                coupling = cp.vstack((coupling, k_shifted.flatten()))
-            #coupling.append(k_shifted.flatten())
-    print("Done")
-    #return cp.array(coupling)
+            coupling[k] = shift(k_pad, i-kernel.shape[1]//2, j-kernel.shape[0]//2)
     return coupling
 
 # Tried params:
