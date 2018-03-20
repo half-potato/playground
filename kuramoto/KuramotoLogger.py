@@ -1,4 +1,4 @@
-CUDA = True
+CUDA = False
 import numpy as np
 if CUDA:
     import cupy as cp
@@ -55,7 +55,7 @@ class KuramotoLogger:
     def save_upscale(self, path, pixelwise, uppyr):
         shape = self.ims[0].shape
         final_shape = (shape[0]*pixelwise*2**uppyr, shape[1]*pixelwise*2**uppyr)
-        out = cv2.VideoWriter(path, cv2.VideoWriter_fourcc(*'XVID'), 15, final_shape, 1)
+        out = cv2.VideoWriter(path, cv2.VideoWriter_fourcc(*'XVID'), 60, final_shape, 1)
         for i in self.ims:
             f_n = cv2.resize(i, (shape[0]*pixelwise, shape[1]*pixelwise), interpolation=cv2.INTER_NEAREST)
             for j in range(uppyr):
@@ -94,14 +94,14 @@ def norm(img):
 # size:60 coupling: 300 hz: 1 hzstd: 0.50 swirls
 # size:120 coupling: 1500 hz: 1 hzstd: 0.50 swirls
 if __name__ == "__main__":
-    size = 120
+    size = 30
     #coupling = np.ones((size**2, size**2))
     if CUDA:
         coupling = cp.array(norm(cp.asnumpy(kc.local_coupling((size, size), kc.gkern(5, 2)))))
     else:
         coupling = kc.local_coupling((size, size), kc.gkern(5, 2))
     k = KuramotoLogger(size**2, 1, 0.50, 1500*coupling)
-    dt = .050
+    dt = .070
     while True:
         k.update(dt)
         k.view((size, size))
@@ -112,7 +112,7 @@ if __name__ == "__main__":
             break
     k.play()
     #k.save("kuramoto_%i.hfyu" % size)
-    k.save_upscale("kuramoto_%i_upscale.avi" % size, 4, 2)
+    k.save_upscale("kuramoto_%i_upscale.avi" % size, 4, 0)
     print("Saved")
     k.view_hist()
     cv2.waitKey(0)

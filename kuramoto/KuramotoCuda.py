@@ -15,11 +15,28 @@ class Kuramoto:
         self.size = size
         self.coupling = coupling
 
+    def derivative(self, phase):
+        phase_rep = np.repeat(phase, self.size, axis=0)
+        phase_diff = np.sum(self.coupling*np.sin(phase_rep.T - phase_rep), axis=0)
+        deriv = (self.internal_freq + phase_diff/self.size)
+        return deriv
+
+    def euler(self, dt):
+        return self.phase + self.derivative(self.phase)*dt
+
+    def runge_kutta(self, dt):
+        k1 = self.derivative(self.phase)*dt
+        k2 = self.derivative(self.phase + k1/2)*dt
+        k3 = self.derivative(self.phase + k2/2)*dt
+        k4 = self.derivative(self.phase + k3)*dt
+        return self.phase + (k1+2*k2+2*k3+k4)/6
+
     def update(self, dt):
-        phase_rep = cp.repeat(self.phase, self.size, axis=0)
-        phase_diff = cp.sum(self.coupling*cp.sin(phase_rep.T - phase_rep), axis=0)
-        dtheta = (self.internal_freq + phase_diff/self.size)
-        self.phase = cp.mod(self.phase + dtheta * dt, 2*np.pi)
+        self.phase = np.mod(self.runge_kutta(dt), 2*np.pi)
+        self.hist = np.vstack((self.hist, self.phase))
+        r, phi = self.order()
+        self.rs.append(r)
+        self.phis.append(phi)
 
     def order(self):
         o = cp.mean(cp.exp(self.phase * np.complex(0,1)))
